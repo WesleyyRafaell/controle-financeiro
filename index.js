@@ -30,11 +30,15 @@ const addTransactionIntoDom = ({ id, name, amount }) => {
     transactionsUL.append(li);
 }
 
+const getExpenses = transactionsAmounts => Math.abs(transactionsAmounts.filter(value => value < 0).reduce((accumulator, value) => accumulator + value, 0)).toFixed(2);
+const getIncomes = transactionsAmounts => transactionsAmounts.filter(value => value > 0).reduce((accumulator, value) => accumulator + value, 0).toFixed(2);
+const getTotal = transactionsAmounts => transactionsAmounts.reduce((accumulator, transaction) => accumulator + transaction, 0).toFixed(2);
+
 const updateBalanceValues = () => {
     const transactionsAmounts = transactions.map(({ amount }) => amount);
-    const total = transactionsAmounts.reduce((accumulator, transaction) => accumulator + transaction, 0).toFixed(2);
-    const income = transactionsAmounts.filter(value => value > 0).reduce((accumulator, value) => accumulator + value, 0).toFixed(2);
-    const expense = Math.abs(transactionsAmounts.filter(value => value < 0).reduce((accumulator, value) => accumulator + value, 0)).toFixed(2);
+    const total = getTotal(transactionsAmounts);
+    const income = getIncomes(transactionsAmounts);
+    const expense = getExpenses(transactionsAmounts);
 
     balanceDisplay.textContent = `R$ ${total}`;
     incomeDisplay.textContent = `R$ ${income}`;
@@ -56,30 +60,40 @@ const updateLocalStorage = () => {
 
 const generateID = () => Math.round(Math.random() * 1000);
 
-form.addEventListener('submit', event => {
+
+const addToTransactionsArray = (transactionName, transactionAmountNumber) => {
+    transactions.push({
+        id: generateID(),
+        name: transactionName,
+        amount: transactionAmountNumber
+    });
+}
+
+const clearInputs = () => {
+    inputTransactionName.value = '';
+    inputTransactionAmount.value = '';
+}
+
+const handleFormSubmit = event => {
     event.preventDefault();
 
     const transactionName = inputTransactionName.value.trim();
     const transactionAmount = inputTransactionAmount.value.trim();
+    const isSomeInputEmpty = transactionName === '' || transactionAmount === '';
 
-    if (transactionName === '' || transactionAmount === '') {
-        alert('Tanto nome quanto o valor da transação devem ser preenchidos!');
+    if (isSomeInputEmpty) {
+        alert('Tanto Nome quanto o Valor da transação devem ser preenchidos!');
         return;
     }
 
     const transactionAmountNumber = Number(transactionAmount);
 
-    const transaction = {
-        id: generateID(),
-        name: transactionName,
-        amount: transactionAmountNumber
-    };
-
-    transactions.push(transaction);
+    addToTransactionsArray(transactionName, transactionAmountNumber);
     init();
 
     updateLocalStorage();
 
-    inputTransactionName.value = '';
-    inputTransactionAmount.value = '';
-});
+    clearInputs();
+}
+
+form.addEventListener('submit', handleFormSubmit);
